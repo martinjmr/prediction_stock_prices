@@ -7,3 +7,8 @@ jupyter
 ipykernel
 xgboost
 lightgbm
+catboost
+torch
+optuna
+shap
+wandb
