@@ -24,3 +24,10 @@ Thumbs.db
 
 # Env
 .env
+
+# Modèles entraînés
+models/
+*.pt
+
+# Claude Code
+.claude/
