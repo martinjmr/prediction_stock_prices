@@ -37,6 +37,11 @@ X_train = pd.DataFrame(checkpoint['X_train_feat'], columns=checkpoint['X_train_c
 y_train = checkpoint['y_train']
 X_test = pd.DataFrame(checkpoint['X_test_feat'], columns=checkpoint['X_test_cols'])
 
+# Handle NaN values (fill with mean of numeric columns only)
+numeric_cols = X_train.select_dtypes(include=[np.number]).columns
+X_train[numeric_cols] = X_train[numeric_cols].fillna(X_train[numeric_cols].mean())
+X_test[numeric_cols] = X_test[numeric_cols].fillna(X_train[numeric_cols].mean())
+
 META_COLS = ['ID', 'date', 'eqt_code']
 feature_cols = [c for c in X_train.columns if c not in META_COLS]
 y_train_binary = (y_train > 0).astype(int)
