@@ -24,21 +24,21 @@ vs. benchmark CFM à 51.80%.**
 
 ## Approche
 
-1. **Feature engineering** (`src/features.py`, `submission/src/features.py`) :
+1. **Feature engineering** (`src/utils.build_advanced_features()`) :
    71 bins de rendements bruts → 183 features réparties en 6 familles
    (statistiques temporelles, EWMA multi-échelle, volatilité, chemin de prix
    cumulé, moments d'ordre supérieur, features cross-sectionnelles
    rang/z-score par jour).
-2. **Baseline** : régression logistique sur features brutes vs. enrichies
-   (`logreg_enriched.py`, `submission/1_logreg.py`).
+2. **Baseline** : régression logistique sur features enrichies
+   (`submissions/1_logreg.py`).
 3. **LightGBM** : recherche d'hyperparamètres par Optuna, puis entraînement
-   final multi-seeds sur folds expanding-window (`submission/2_lightgbm.py`).
+   final sur folds temporels (`submissions/2_lightgbm.py`).
 4. **FT-Transformer** : Feature Tokenizer Transformer — chaque feature
    scalaire est tokenisée puis passée dans un encodeur Transformer, prédiction
-   via le token CLS (`submission/3_ft_transformer.py`).
+   via le token CLS (`submissions/3_ft_transformer.py`).
 5. **Ensemble** : moyenne 50/50 des probabilités LightGBM et FT-Transformer,
    dont les biais inductifs complémentaires réduisent l'erreur
-   (`submission/4_ensemble.py`).
+   (`submissions/4_ensemble.py`).
 
 Validation : split temporel par date / expanding-window CV avec embargo pour
 éviter toute fuite d'information entre passé et futur.
@@ -49,41 +49,62 @@ Un pipeline LSTM alternatif (`src/train.py`, `src/models.py`, `run_lstm.py`,
 ## Structure du dépôt
 
 ```
-submission/           Pipeline final, propre et numéroté (0→4)
+submissions/          📌 Pipeline final, propre et numéroté (0→4) — UTILISER CELUI-CI
   0_features.py         construit et sauvegarde les 183 features
   1_logreg.py            baseline régression logistique
   2_lightgbm.py          LightGBM + Optuna
   3_ft_transformer.py    FT-Transformer + Optuna
   4_ensemble.py           ensemble final
-  src/features.py         feature engineering (version épurée)
+  requirements.txt       dépendances avec versions épinglées
+  README.md              instructions détaillées du pipeline
 
-src/                  Code source du pipeline exploratoire (LSTM, utils)
+src/                  Code source exploratoire & utilitaires
   features.py            feature engineering complet
-  models.py               LSTM / Transformer / TCN / CatBoost
+  models.py               architectures (LSTM, Transformer, TCN)
   train.py                boucles d'entraînement, CV, soumission
-  utils.py                chargement des données, reproductibilité
+  utils.py                chargement données, reproductibilité, build_advanced_features
 
 notebooks/            Exploration (EDA) et visualisations
-report/                Rapport (LaTeX + PDF) et notes techniques
-figures/               Figures générées pour le rapport/la présentation
-checkpoints/           Modèles et features sauvegardés (générés localement)
-presentation_cfm*.pptx Supports de présentation
+  01_eda.ipynb           analyse exploratoire
+
+data/                 Données (à télécharger)
+  input_training.csv    features d'entraînement
+  output_training_*.csv cibles d'entraînement
+  input_test.csv        features de test
 ```
 
 ## Reproduire les résultats
 
+### Setup
+
 ```bash
-pip install -r submission/requirements.txt
-cd submission
-python 0_features.py       # construit checkpoints/features.npz
-python 1_logreg.py         # baseline
-python 2_lightgbm.py       # LightGBM (Optuna + entraînement final)
-python 3_ft_transformer.py # FT-Transformer (Optuna + entraînement final)
-python 4_ensemble.py       # soumission finale (ensemble)
+# 1. Télécharger les données de compétition
+# Placer dans data/ :
+#   - input_training.csv
+#   - output_training_*.csv
+#   - input_test.csv
+
+# 2. Installer dépendances
+cd submissions
+pip install -r requirements.txt
 ```
 
-Placer au préalable `input_training.csv`, `output_training_*.csv` et
-`input_test.csv` dans `data/`.
+### Exécution
+
+```bash
+# Exécuter depuis le répertoire du projet (parent de submissions/)
+cd submissions
+
+python 0_features.py       # Build features → checkpoints/features.npz
+python 1_logreg.py         # Baseline logistic regression
+python 2_lightgbm.py       # LightGBM + Optuna (20 trials)
+python 3_ft_transformer.py # FT-Transformer + Optuna (15 trials)
+python 4_ensemble.py       # FINAL SUBMISSION (50/50 ensemble)
+```
+
+Les prédictions finales sont sauvegardées dans `submissions_output/ensemble_submission.csv`.
+
+**Durée estimée :** ~10-30 minutes (dépend du hardware et des données)
 
 ## Équipe
 
