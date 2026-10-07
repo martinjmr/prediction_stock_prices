@@ -31,3 +31,6 @@ models/
 
 # Claude Code
 .claude/
+# Pipeline outputs
+checkpoints/
+submissions_output/
