@@ -34,3 +34,6 @@ models/
 # Pipeline outputs
 checkpoints/
 submissions_output/
+
+# Cached inputs, predictions and logs
+outputs/
