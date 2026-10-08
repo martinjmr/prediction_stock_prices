@@ -43,7 +43,7 @@ Submissions to the [challenge](https://challengedata.ens.fr/challenges/16), May 
 
 On the leaderboards, our best submission ranks 82nd of 240 on the public test set and 101st of 240 on the private one (52.05% against 51.49% for the benchmark).
 
-Cross-validation on the 596,185 validated stock-days; I reran steps 1, 3 and 4 in October 2026 ([details by fold](reports/results.md)):
+Cross-validation on the 596,185 validated stock-days, scored on the training target (beating the median of the day); I reran steps 1, 3 and 4 in October 2026 ([details by fold](reports/results.md)):
 
 | Model | Accuracy |
 |---|---|

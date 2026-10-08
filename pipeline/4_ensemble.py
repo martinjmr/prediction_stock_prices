@@ -42,7 +42,8 @@ def main() -> None:
 
     lines = ["# Cross-validation results", "",
              "Accuracy on the validation dates of the 4 folds "
-             f"({sum(len(v) for v in folds):,} stock-days). Averages are 50/50 on probabilities.", "",
+             f"({sum(len(v) for v in folds):,} stock-days), on the training target: 1 if the stock's "
+             "end-of-day return beats the median of the day. Averages are 50/50 on probabilities.", "",
              "| Model | Fold 1 | Fold 2 | Fold 3 | Fold 4 | All folds |", "|---|---|---|---|---|---|"]
     for name, per_fold, overall in rows:
         lines.append(f"| {name} | " + " | ".join(f"{100 * a:.2f}%" for a in per_fold) + f" | **{100 * overall:.2f}%** |")
