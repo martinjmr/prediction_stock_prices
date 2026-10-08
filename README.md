@@ -2,7 +2,7 @@
 
 Week-long project for the Deep Learning course of the IASO bachelor's programme, third year (Université Paris Dauphine-PSL, May 2026), which I did with Quiterie Guignard.
 
-**Our best submission reaches 52.48% accuracy on the public test set against 51.99% for the CFM benchmark, and 52.05% against 51.49% on the private test set.**
+**Our best submission reaches 52.05% accuracy on the private test set, which gives the final ranking, against 51.49% for the CFM benchmark.**
 
 ## Task
 
@@ -27,7 +27,9 @@ The LSTM comes from the project week, when we trained it on the sign of the retu
 
 ## Results
 
-Submissions to the [challenge](https://challengedata.ens.fr/challenges/16), May 2026, with the method recorded for each. The public test set scores every submission; the private test set gives the final ranking.
+On the private leaderboard of the [challenge](https://challengedata.ens.fr/challenges/16), which gives the final ranking, our best submission scores 52.05% against 51.49% for the benchmark and ranks 101st of 240.
+
+To compare methods, the table gives the score of each May 2026 submission on the public test set, which scores every submission, with the method recorded for each.
 
 | Submission | Public accuracy |
 |---|---|
@@ -41,7 +43,6 @@ Submissions to the [challenge](https://challengedata.ens.fr/challenges/16), May 
 | Average of LightGBM and CatBoost | 52.43% |
 | Best submission (method not recorded) | **52.48%** |
 
-On the leaderboards, our best submission ranks 82nd of 240 on the public test set and 101st of 240 on the private one (52.05% against 51.49% for the benchmark).
 
 Cross-validation on the 596,185 validated stock-days, scored on the training target (beating the median of the day); I reran steps 1, 3 and 4 in October 2026 ([details by fold](reports/results.md)):
 
