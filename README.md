@@ -1,6 +1,6 @@
 # CFM Challenge: Predicting End-of-Day Stock Returns
 
-Week-long project for the Deep Learning course of the L3 IASO program (Université Paris Dauphine-PSL, May 2026), which I did with Quiterie Guignard.
+Week-long project for the Deep Learning course of the IASO bachelor's programme, third year (Université Paris Dauphine-PSL, May 2026), which I did with Quiterie Guignard.
 
 **Our best submission reaches 52.48% accuracy on the public test set against 51.99% for the CFM benchmark, and 52.05% against 51.49% on the private test set.**
 
