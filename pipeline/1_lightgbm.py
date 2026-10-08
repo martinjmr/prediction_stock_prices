@@ -1,4 +1,4 @@
-"""LightGBM: Optuna search on a 15% subsample, then 5 seeds x 4 expanding-window folds.
+"""LightGBM: Optuna search on a 15% subsample, then 5 seeds x 4 folds of days.
 
 Usage (from the repository root): python pipeline/1_lightgbm.py [--data-dir data]
 Output: outputs/lightgbm.npz (out-of-fold and test probabilities),
@@ -6,6 +6,7 @@ Output: outputs/lightgbm.npz (out-of-fold and test probabilities),
 """
 import argparse
 import sys
+import warnings
 from pathlib import Path
 
 import lightgbm as lgb
@@ -13,10 +14,11 @@ import numpy as np
 import optuna
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from src.cv import accuracy, expanding_window_split  # noqa: E402
+from src.cv import accuracy, date_block_folds  # noqa: E402
 from src.data import load, save_predictions  # noqa: E402
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
+warnings.filterwarnings("ignore")  # LightGBM deprecation notices
 
 
 def fit(params, X_tr, y_tr, X_val, y_val):
@@ -38,7 +40,7 @@ def main() -> None:
     X_test = np.hstack([d["feat_test"], d["raw_test"]])
     print(f"LightGBM inputs: train {X.shape}, test {X_test.shape}")
 
-    # Phase 1: hyperparameter search on 15% of the rows, 3 expanding-window folds
+    # Phase 1: hyperparameter search on 15% of the rows, 3 folds
     rng = np.random.default_rng(42)
     sub = np.sort(rng.choice(len(y), size=int(len(y) * 0.15), replace=False))
     Xs, ys, ds = X[sub], y[sub], dates[sub]
@@ -57,7 +59,7 @@ def main() -> None:
             "reg_lambda": trial.suggest_float("reg_lambda", 1e-4, 1.0, log=True),
         }
         accs = [accuracy(ys[val], fit(params, Xs[tr], ys[tr], Xs[val], ys[val]).predict_proba(Xs[val])[:, 1])
-                for tr, val in expanding_window_split(ds, n_splits=3)]
+                for tr, val in date_block_folds(ds, n_splits=3)]
         print(f"  trial {trial.number:>2}: {np.mean(accs):.4f}")
         return float(np.mean(accs))
 
@@ -65,7 +67,7 @@ def main() -> None:
     study.optimize(objective, n_trials=args.trials)
     print(f"Best search accuracy {study.best_value:.4f} with {study.best_params}")
 
-    # Phase 2: full data, average of several seeds over 4 expanding-window folds
+    # Phase 2: full data, average of several seeds over 4 folds
     oof = np.zeros(len(y))
     validated = np.zeros(len(y), dtype=bool)
     test = np.zeros(len(X_test))
@@ -74,7 +76,7 @@ def main() -> None:
         params = {**study.best_params, "objective": "binary", "metric": "binary_error",
                   "verbosity": -1, "random_state": seed}
         test_seed, accs = np.zeros(len(X_test)), []
-        folds = list(expanding_window_split(dates, n_splits=4))
+        folds = list(date_block_folds(dates, n_splits=4))
         for k, (tr, val) in enumerate(folds):
             model = fit(params, X[tr], y[tr], X[val], y[val])
             p = model.predict_proba(X[val])[:, 1]

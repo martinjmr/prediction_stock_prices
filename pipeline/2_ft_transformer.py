@@ -1,4 +1,4 @@
-"""FT-Transformer: Optuna search on a 15% subsample, then 4 expanding-window folds.
+"""FT-Transformer: Optuna search on a 15% subsample, then 4 folds of days.
 
 Needs a GPU (about 1-3 h on a Colab T4). Usage: python pipeline/2_ft_transformer.py [--data-dir data]
 Output: outputs/ft_transformer.npz, outputs/submissions/ft_transformer.csv
@@ -13,7 +13,7 @@ import optuna
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from src.cv import accuracy, expanding_window_split  # noqa: E402
+from src.cv import accuracy, date_block_folds  # noqa: E402
 from src.data import load, save_predictions  # noqa: E402
 from src.models import FTTransformer  # noqa: E402
 from src.nn_training import DEVICE, scale_fold, train_fold  # noqa: E402
@@ -49,7 +49,7 @@ def main() -> None:
         bs = trial.suggest_categorical("batch_size", [512, 1024])
         smooth = trial.suggest_float("label_smoothing", 0.0, 0.15)
         accs = []
-        for tr, val in expanding_window_split(d_s, n_splits=3):
+        for tr, val in date_block_folds(d_s, n_splits=3):
             sc = scale_fold(r_s[tr], r_s[val], f_s[tr], f_s[val], dummy_r, dummy_f)
             acc, _, _ = train_fold(lambda: FTTransformer(n_raw, n_feat, **kw), sc[0], sc[2], y_s[tr], sc[1], sc[3],
                                    y_s[val], sc[4], sc[5], lr, wd, bs, epochs=15, patience=4, smooth=smooth)
@@ -64,12 +64,12 @@ def main() -> None:
     hp = study.best_params
     print(f"Best search accuracy {study.best_value:.4f} with {hp}")
 
-    # Phase 2: full data, 4 expanding-window folds
+    # Phase 2: full data, 4 folds of days
     kw = dict(d_model=hp["d_model"], nhead=hp["nhead"] if hp["d_model"] % hp["nhead"] == 0 else 4,
               num_layers=hp["num_layers"], dropout=hp["dropout"])
     oof = np.full(len(y), np.nan)
     test = np.zeros(len(d["raw_test"]))
-    folds = list(expanding_window_split(dates, n_splits=4))
+    folds = list(date_block_folds(dates, n_splits=4))
     fold_acc = []
     for k, (tr, val) in enumerate(folds):
         print(f"Fold {k + 1}/{len(folds)}")

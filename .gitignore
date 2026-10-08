@@ -4,36 +4,19 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 
-# Data
+# Challenge data (not redistributable)
 data/
-*.csv
-*.parquet
-*.pkl
-*.h5
+
+# Cached inputs, predictions, submissions and logs
+outputs/
 
 # Jupyter
 .ipynb_checkpoints/
 
-# IDE
+# IDE / OS
 .vscode/
 .idea/
-
-# OS
 .DS_Store
 Thumbs.db
-
-# Env
 .env
-
-# Modèles entraînés
-models/
-*.pt
-
-# Claude Code
 .claude/
-# Pipeline outputs
-checkpoints/
-submissions_output/
-
-# Cached inputs, predictions and logs
-outputs/

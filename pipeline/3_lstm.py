@@ -14,7 +14,7 @@ import numpy as np
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from src.cv import accuracy, expanding_window_split  # noqa: E402
+from src.cv import accuracy, date_block_folds  # noqa: E402
 from src.data import load, save_predictions  # noqa: E402
 from src.models import LSTMClassifier  # noqa: E402
 from src.nn_training import DEVICE, scale_fold, train_fold  # noqa: E402
@@ -42,7 +42,7 @@ def main() -> None:
 
     oof = np.full(len(y), np.nan)
     test = np.zeros(len(d["raw_test"]))
-    folds = list(expanding_window_split(dates, n_splits=4))
+    folds = list(date_block_folds(dates, n_splits=4))
     fold_acc = []
     for k, (tr, val) in enumerate(folds):
         print(f"Fold {k + 1}/{len(folds)}: {len(tr):,} training rows, {len(val):,} validation rows", flush=True)

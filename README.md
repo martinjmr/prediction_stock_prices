@@ -2,48 +2,62 @@
 
 Week-long project for the Deep Learning course of the L3 IASO program (Université Paris Dauphine-PSL, May 2026), by Quiterie Guignard and Martin Jomier.
 
-**52.43% accuracy against 51.80% for the CFM benchmark, 3rd place in the course ranking.** The benchmark is itself a LightGBM: the gain comes from our engineered features and tuning, and the choice of model then moves the score by at most 0.03 points.
+**52.43% accuracy on the public leaderboard against 51.80% for the CFM benchmark, 3rd place in the course ranking**, with a 50/50 average of LightGBM and an FT-Transformer.
 
 ## Task
 
-For each (stock, day) pair, predict whether the return over the last 30 minutes of the session beats that day's cross-sectional median, using the 71 five-minute returns observed between 9:30 and 15:25. About 700 stocks over about 700 days. The data comes from [Challenge Data](https://challengedata.ens.fr/challenges/16) and is not included here.
+For each stock and day, predict whether the stock's residual return between 15:30 and 16:00 is positive, from its 71 five-minute returns between 9:30 and 15:20. The data covers 680 US stocks: 745,327 stock-days for training (1,511 days) and 319,769 for the test set. It comes from [Challenge Data](https://challengedata.ens.fr/challenges/16) and is not included here.
 
-## Approach
+The models learn a balanced version of the target: 1 if the stock's end-of-day return beats the median of all stocks on the same day.
 
-1. **Features** (`build_advanced_features` in `src/utils.py`): the 71 raw returns become 183 features in six families: temporal statistics, multi-scale EWMA, volatility, cumulative price path, higher-order moments, and per-day cross-sectional ranks and z-scores.
-2. **Baseline**: logistic regression.
-3. **LightGBM**, tuned with Optuna (20 trials).
-4. **FT-Transformer**: each feature becomes a token for a Transformer encoder, which predicts from a CLS token; tuned with Optuna (15 trials).
-5. **Ensemble**: average of the LightGBM and FT-Transformer probabilities.
+## Pipeline
 
-Validation splits by date (expanding window with an embargo), so that no information from later days leaks into training. During the project week we also tried an LSTM on the raw five-minute series; it was not kept.
+**Inputs** (`src/data.py`, `src/features.py`). 41 engineered features in five families: time-series statistics (means, exponentially weighted means, skewness, kurtosis, lag-1 autocorrelation), volatility, shape of the cumulative price path, position of the stock among the other stocks of the day (z-scores, ranks), and market regime (dispersion, share of rising stocks, intraday beta). The models see 183 inputs: these 41 features and the 71 returns twice, with missing values set to 0 and to the mean of the row.
 
-## Results (leaderboard accuracy)
+**Cross-validation** (`src/cv.py`). The 1,511 days, sorted by their ID, are cut into five blocks; fold k trains on blocks 1 to k and validates on block k + 1. Every stock of a given day stays on one side, which the cross-sectional features require. The date IDs are anonymised, so the blocks are not in chronological order.
+
+| Step | Model | Tuning | Hardware |
+|---|---|---|---|
+| `pipeline/1_lightgbm.py` | LightGBM | Optuna, 15 trials on 15% of the rows, then 5 seeds × 4 folds | CPU, about 10 min |
+| `pipeline/2_ft_transformer.py` | FT-Transformer: each input becomes a token, the prediction comes from a CLS token | Optuna, 5 trials, then 4 folds | GPU (Colab T4), 1 to 3 h |
+| `pipeline/3_lstm.py` | LSTM reading the 71 returns as a sequence; its last hidden state is joined to the other inputs | Fixed: 64 units, up to 10 epochs | CPU, about 40 min |
+| `pipeline/4_ensemble.py` | 50/50 averages of the models' probabilities, comparison on the same folds | | |
+
+The LSTM comes from the project week, when it was trained on the sign of the return with its own split. It now shares the target, inputs and folds of the other models, with a smaller network so that it trains on a CPU.
+
+## Results
+
+Public leaderboard, May 2026:
 
 | Model | Accuracy |
 |---|---|
 | CFM benchmark (LightGBM) | 51.80% |
-| LightGBM, engineered features | 52.40% |
+| LightGBM | 52.40% |
 | FT-Transformer | 52.41% |
-| Ensemble 50/50 | **52.43%** |
+| LightGBM + FT-Transformer | **52.43%** |
+
+Cross-validation on the 596,185 validated stock-days, steps 1, 3 and 4 rerun in October 2026 ([details by fold](reports/results.md)):
+
+| Model | Accuracy |
+|---|---|
+| LightGBM | 52.28% |
+| LSTM | 52.16% |
+| LightGBM + LSTM | 52.24% |
+
+- The LSTM scores 0.12 point below LightGBM, and averaging the two does not beat LightGBM alone. Reading the returns as a sequence does not improve on the engineered features here.
+- The FT-Transformer needs a GPU and was not rerun, so it has no score in this table.
+- Every model stops training on its validation fold, so these scores are slightly optimistic. The leaderboard, computed on unseen days, is the reference.
 
 ## Run it
 
-Put the Challenge Data files in `data/` (`input_training.csv`, `output_training_*.csv`, `input_test.csv`), then, from the repository root:
+Put the Challenge Data files in `data/` (`input_training.csv`, `output_training*.csv`, `input_test.csv`), then, from the repository root:
 
 ```bash
 pip install -r requirements.txt
-python submissions/0_features.py        # 183 features -> checkpoints/features.npz
-python submissions/1_logreg.py          # baseline
-python submissions/2_lightgbm.py        # LightGBM + Optuna
-python submissions/3_ft_transformer.py  # FT-Transformer + Optuna
-python submissions/4_ensemble.py        # -> submissions_output/ensemble_submission.csv
+python pipeline/1_lightgbm.py        # the first step also caches the inputs in outputs/data.npz
+python pipeline/2_ft_transformer.py  # GPU recommended
+python pipeline/3_lstm.py
+python pipeline/4_ensemble.py        # reports/results.md and outputs/submissions/*.csv
 ```
 
-The numbered scripts were reorganised after the project week; the accuracies above are the leaderboard scores from May 2026.
-
-## Repository
-
-- `submissions/`: the final pipeline, steps 0 to 4
-- `src/utils.py`: data loading, feature engineering, seeding
-- `notebooks/01_eda.ipynb`: exploratory analysis
+`notebooks/01_eda.ipynb` holds the exploratory analysis (in French).

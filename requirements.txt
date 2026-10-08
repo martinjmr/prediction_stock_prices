@@ -6,3 +6,4 @@ optuna
 torch
 matplotlib
 seaborn
+jupyter

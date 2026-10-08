@@ -1,5 +1,6 @@
 """Feature engineering: 41 features computed from the 71 intraday returns."""
 import re
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -9,6 +10,7 @@ META = {"ID", "date", "eqt_code", "target", "end_of_day_return"}
 
 def build_advanced_features(df: pd.DataFrame) -> pd.DataFrame:
     """Return df with missing returns imputed and the engineered features appended."""
+    warnings.simplefilter("ignore", pd.errors.PerformanceWarning)
     df_feat = df.copy()
     ret_cols = [c for c in df.columns if c not in META]
     returns = df_feat[ret_cols].apply(pd.to_numeric, errors="coerce")
