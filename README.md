@@ -41,7 +41,6 @@ To compare methods, the table gives the score of each May 2026 submission on the
 | CatBoost | 52.38% |
 | LightGBM, engineered features | 52.40% |
 | Average of LightGBM and CatBoost | 52.43% |
-| Best submission (method not recorded) | **52.48%** |
 
 
 Cross-validation on the 596,185 validated stock-days, scored on the training target (beating the median of the day); I reran steps 1, 3 and 4 in October 2026 ([details by fold](reports/results.md)):
