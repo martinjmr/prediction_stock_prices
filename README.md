@@ -27,9 +27,7 @@ The LSTM comes from the project week, when we trained it on the sign of the retu
 
 ## Results
 
-On the private leaderboard of the [challenge](https://challengedata.ens.fr/challenges/16), which gives the final ranking, our best submission scores 52.05% against 51.49% for the benchmark and ranks 101st of 240.
-
-To compare methods, the table gives the score of each May 2026 submission on the public test set, which scores every submission, with the method recorded for each.
+On the private leaderboard of the [challenge](https://challengedata.ens.fr/challenges/16), which gives the final ranking, our best submission, a 50/50 average of the LightGBM and CatBoost probabilities, scores 52.05% against 51.49% for the benchmark.
 
 | Submission | Public accuracy |
 |---|---|
@@ -40,8 +38,7 @@ To compare methods, the table gives the score of each May 2026 submission on the
 | Transformer, engineered features | 52.31% |
 | CatBoost | 52.38% |
 | LightGBM, engineered features | 52.40% |
-| Average of LightGBM and CatBoost | 52.43% |
-
+| Average of LightGBM and CatBoost (our best on the private test set: 52.05%) | 52.43% |
 
 Cross-validation on the 596,185 validated stock-days, scored on the training target (beating the median of the day); I reran steps 1, 3 and 4 in October 2026 ([details by fold](reports/results.md)):
 
